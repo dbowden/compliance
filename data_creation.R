@@ -52,7 +52,7 @@ icow$begclaim <- trncint(icow$begclaim, 6, 4) #6 is position of first digit in 6
 icow$endclaim <- trncint(icow$endclaim, 6, 4)
 #colnames(icow)[6] <- "year" #this would capture new disputes
 colnames(icow)[7] <- "year" #this captures ongoing claims
-icow$year[is.na(icow$year)] <- rnorm(2030)
+icow$year[is.na(icow$year)] <- 2030
 rm(trncint)
 
 ############ Merge data #############
@@ -69,3 +69,4 @@ rm(icow)
 
 # reorder data frame
 data$dyad <- paste(data$gainer,data$loser,sep="")
+data <- arrange(data, dyad, year)
