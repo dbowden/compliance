@@ -4,9 +4,9 @@
 library(plyr)
 
 ############ load and clean data ##########
-tc <- read.csv("C:/Users/David/Desktop/Dropbox/RA Work/Compliance Paper/data/tc2008.csv")
-icow <- read.csv("C:/Users/David/Desktop/Dropbox/RA Work/Compliance Paper/data/ICOW-Diehl.csv")
-frame <- read.csv("C:/Users/David/Desktop/Dropbox/RA Work/Compliance Paper/data/frame.csv")
+tc <- read.csv("http://dl.dropbox.com/u/4115584/tc2008.csv")
+icow <- read.csv("http://dl.dropbox.com/u/4115584/ICOW-Diehl.csv")
+frame <- read.csv("http://dl.dropbox.com/u/4115584/frame.csv")
 
 #standardize NA codes
 tc[tc == "."] <- NA
@@ -67,10 +67,6 @@ rm(icow)
 
 ################ Create 5, 10, and 20 year windows for wars ################
 
-# reorder data frame
-data$dyad <- paste(data$gainer,data$loser,sep="")
-data <- arrange(data, dyad, year) # now we should be able to use the base lag function. actually i'm not sure this is necessary.
-
 #lead years of terr mids
 data$mid0 <- ifelse(data$ter == 1, data$year, 0)
 data$mid1 <- ifelse(data$ter == 1, lag(data$year, 1), 0) 
@@ -115,3 +111,7 @@ data <- subset(data, !is.na(data$version))
 ########## create indicator for ongoing claim #################
 
 data$ongoing <- ifelse(!is.na(data$claim), 1, 0)
+
+summary(glm(ongoing ~ agreement, data=data,family=binomial(logit)))
+summary(glm(w20 ~ agreement, data=data,family=binomial(logit)))
+summary(glm(w10 ~ agreement, data=data,family=binomial(logit)))
