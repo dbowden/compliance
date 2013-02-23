@@ -1,8 +1,5 @@
 #### Code to create data for Bowden and Diehl (2013) paper to be presented at Brazil Compliance Conference ###
 
-############## load packages ###########
-library(plyr)
-
 ############ load and clean data ##########
 tc <- read.csv("http://dl.dropbox.com/u/4115584/tc2008.csv")
 icow <- read.csv("http://dl.dropbox.com/u/4115584/ICOW-Diehl.csv")
@@ -110,7 +107,7 @@ data <- subset(data, !is.na(data$version))
 
 ########## create indicator for ongoing claim #################
 
-data$ongoing <- ifelse(!is.na(data$claim), 1, 0)
+data$ongoing <- ifelse(!is.na(lag(data$claim, -1)), 1, 0)
 
 summary(glm(ongoing ~ agreement, data=data,family=binomial(logit)))
 summary(glm(w20 ~ agreement, data=data,family=binomial(logit)))
