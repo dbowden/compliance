@@ -65,7 +65,7 @@ rm(icow)
 ################ Create 5, 10, and 20 year windows for wars ################
 
 #lead years of terr mids
-data$mid0 <- ifelse(data$ter == 1, data$year, 0)
+#data$mid0 <- ifelse(data$ter == 1, data$year, 0)
 data$mid1 <- ifelse(data$ter == 1, lag(data$year, 1), 0) 
 data$mid2 <- ifelse(data$ter == 1, lag(data$year, 2), 0)
 data$mid3 <- ifelse(data$ter == 1, lag(data$year, 3), 0)
@@ -88,11 +88,11 @@ data$mid19 <- ifelse(data$ter ==1, lag(data$year, 19), 0)
 data$mid20 <- ifelse(data$ter ==1, lag(data$year, 20), 0)
 
 #if year is equal to leads, a mid occurred within the window
-data$w5 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid0 | data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5, 1, 0))
+data$w5 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5, 1, 0))
 
-data$w10 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid0 | data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5 | data$year == data$mid6 | data$year == data$mid7 | data$year == data$mid8 | data$year == data$mid9 | data$year == data$mid10, 1, 0))
+data$w10 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5 | data$year == data$mid6 | data$year == data$mid7 | data$year == data$mid8 | data$year == data$mid9 | data$year == data$mid10, 1, 0))
 
-data$w20 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid0 | data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5 | data$year == data$mid6 | data$year == data$mid7 | data$year == data$mid8 | data$year == data$mid9 | data$year == data$mid10 | data$year == data$mid11 | data$year == data$mid12 | data$year == data$mid13 | data$year == data$mid14 | data$year == data$mid15 | data$year == data$mid16 | data$year == data$mid17 | data$year == data$mid18 | data$year == data$mid19 | data$year == data$mid20, 1, 0))
+data$w20 <- ifelse(is.na(data$year) == T, 0, ifelse(data$year == data$mid1 | data$year == data$mid2 | data$year == data$mid3 | data$year == data$mid4 | data$year == data$mid5 | data$year == data$mid6 | data$year == data$mid7 | data$year == data$mid8 | data$year == data$mid9 | data$year == data$mid10 | data$year == data$mid11 | data$year == data$mid12 | data$year == data$mid13 | data$year == data$mid14 | data$year == data$mid15 | data$year == data$mid16 | data$year == data$mid17 | data$year == data$mid18 | data$year == data$mid19 | data$year == data$mid20, 1, 0))
 
 # clean up
 drops <- c("mid0","mid1","mid2","mid3","mid4","mid5","mid6","mid7","mid8","mid9","mid10","mid11","mid12","mid13","mid14","mid15","mid16","mid17","mid18","mid19","mid20","V21","dyad")
@@ -109,6 +109,13 @@ data <- subset(data, !is.na(data$version))
 
 data$ongoing <- ifelse(!is.na(lag(data$claim, -1)), 1, 0)
 
-summary(glm(ongoing ~ agreement, data=data,family=binomial(logit)))
+m1 = glm(ongoing ~ non.pleb, data=data,family=binomial(logit))
+summary(m1)
+m2 = glm(ongoing ~ agreement, data=data,family=binomial(logit))
+summary(m2)
+m3 = glm(ongoing ~ non.pleb + contlose + polity21,data=data,family=binomial(logit))
+summary(m3)
+
+
 summary(glm(w20 ~ agreement, data=data,family=binomial(logit)))
 summary(glm(w10 ~ agreement, data=data,family=binomial(logit)))
