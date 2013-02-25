@@ -4,6 +4,7 @@
 tc <- read.csv("http://dl.dropbox.com/u/4115584/tc2008.csv")
 icow <- read.csv("http://dl.dropbox.com/u/4115584/ICOW-Diehl.csv")
 frame <- read.csv("http://dl.dropbox.com/u/4115584/frame.csv")
+courts <- read.csv("http://dl.dropbox.com/u/4115584/icj.csv")
 
 #standardize NA codes
 tc[tc == "."] <- NA
