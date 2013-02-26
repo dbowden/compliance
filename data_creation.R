@@ -90,15 +90,17 @@ rm(icow)
 library(plm)
 
 data$dyad <- paste(data$gainer,data$loser,sep="")
+
 lags <- pdata.frame(data, index=c("dyad","year"))
+lags <- lags[!is.na(lags$year),]
 
 #lead years of terr mids
 lags$mid0 <- ifelse(lags$ter == 1, lags$year, 0)
-lags$mid1 <- ifelse(lags$ter == 1, lag(lags$year, 1), 0) 
-lags$mid2 <- ifelse(lags$ter == 1, lag(lags$year, 2), 0)
-lags$mid3 <- ifelse(lags$ter == 1, lag(lags$year, 3), 0)
-lags$mid4 <- ifelse(lags$ter == 1, lag(lags$year, 4), 0)
-lags$mid5 <- ifelse(lags$ter == 1, lag(lags$year, 5), 0)
+lags$mid1 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 1), 0) 
+lags$mid2 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 2), 0)
+lags$mid3 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 3), 0)
+lags$mid4 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 4), 0)
+lags$mid5 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 5), 0)
 lags$mid6 <- ifelse(lags$ter == 1, lag(lags$year, 6), 0)
 lags$mid7 <- ifelse(lags$ter == 1, lag(lags$year, 7), 0)
 lags$mid8 <- ifelse(lags$ter == 1, lag(lags$year, 8), 0)
@@ -116,7 +118,7 @@ lags$mid19 <- ifelse(lags$ter ==1, lag(lags$year, 19), 0)
 lags$mid20 <- ifelse(lags$ter ==1, lag(lags$year, 20), 0)
 
 #if year is equal to leads, a mid occurred within the window
-lags$w5 <- ifelse(is.na(lags$year) == T, 0, ifelse(lags$mid0 == 1 | lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5, 1, 0))
+lags$w5 <- ifelse(is.na(lags$mid0) == T | is.na(lags$mid1) == T | is.na(lags$mid2) == T | is.na(lags$mid3) == T | is.na(lags$mid4) == T | is.na(lags$mid5) == T, 0, ifelse(lags$year == lags$mid0 | lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5, 1, 0))
 
 lags$w10 <- ifelse(is.na(lags$year) == T, 0, ifelse(lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5 | lags$year == lags$mid6 | lags$year == lags$mid7 | lags$year == lags$mid8 | lags$year == lags$mid9 | lags$year == lags$mid10, 1, 0))
 
