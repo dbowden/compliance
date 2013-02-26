@@ -4,6 +4,7 @@
 tc <- read.csv("http://dl.dropbox.com/u/4115584/tc2008.csv")
 icow <- read.csv("http://dl.dropbox.com/u/4115584/ICOW-Diehl.csv")
 frame <- read.csv("http://dl.dropbox.com/u/4115584/frame.csv")
+courts <- read.delim("C:/Users/David/Downloads/huthallee")
 
 #standardize NA codes
 tc[tc == "."] <- NA
@@ -49,10 +50,22 @@ icow$begclaim <- trncint(icow$begclaim, 6, 4) #6 is position of first digit in 6
 icow$endclaim <- trncint(icow$endclaim, 6, 4)
 #colnames(icow)[6] <- "year" #this would capture new disputes
 colnames(icow)[7] <- "year" #this captures ongoing claims
-icow$year[is.na(icow$year)] <- 2030
+#icow$year[is.na(icow$year)] <- 2030
 rm(trncint)
 
 ############ Merge data #############
+
+#clean up huth and allee
+courts <- subset(courts, arbadj2 == 1)
+colnames(courts)[1] <- "gainer"
+colnames(courts)[2] <- "loser"
+courts$year.2 <- trncint(courts$edatepog, 2, 2)
+keeps <- c("gainer","loser","year","arbadj2")
+courts <- courts[names(courts) %in% keeps]
+rm(keeps)
+
+tc$year.2 <- trncint(tc$year, 2, 2)
+tc <- merge(tc, courts, all.x=T, all.y=F)
 
 #merge tc into frame
 data <- merge(tc, frame, all=T)
