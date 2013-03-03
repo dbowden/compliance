@@ -87,65 +87,17 @@ rm(icow)
 
 ################ Create 5, 10, and 20 year windows for wars ################
 
-library(plm)
 library(plyr)
 
 data$dyad <- paste(data$gainer,data$loser,sep="")
-data <- arrange(data, dyad, year)
-
-lags <- pdata.frame(data, index=c("dyad","year"))
-lags <- lags[!is.na(lags$year),]
-
 data <- data[!is.na(data$year),]
+data <- arrange(data, dyad, year)
+#data$year = as.Date(data$year,format = "%y",origin = "1816")
+
+data <- ddply(data, .(dyad), transform, lag1 = c(NA, cwkeynum[-length(cwkeynum)]))
 
 
-#lead years of terr mids
-lags$mid0 <- ifelse(lags$ter == 1, lags$year, 0)
-lags$mid1 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 1), 0) 
-lags$mid2 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 2), 0)
-lags$mid3 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 3), 0)
-lags$mid4 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 4), 0)
-lags$mid5 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 5), 0)
-lags$mid6 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 6), 0)
-lags$mid7 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 7), 0)
-lags$mid8 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 8), 0)
-lags$mid9 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 9), 0)
-lags$mid10 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 10), 0)
-lags$mid11 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 11), 0)
-lags$mid12 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 12), 0)
-lags$mid13 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 13), 0)
-lags$mid14 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 14), 0)
-lags$mid15 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 15), 0)
-lags$mid16 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 16), 0)
-lags$mid17 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 17), 0)
-lags$mid18 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 18), 0)
-lags$mid19 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 19), 0)
-lags$mid20 <- ifelse(lags$ter == 1, lag(factor(lags$year, levels=1816:2029), 20), 0)
 
-#if year is equal to leads, a mid occurred within the window
-lags$year = as.numeric(lags$year)
-
-lags$w5 <- ifelse(is.na(lags$mid0) == T | is.na(lags$mid1) == T | is.na(lags$mid2) == T | is.na(lags$mid3) == T | is.na(lags$mid4) == T | is.na(lags$mid5) == T, 0, ifelse(lags$year == lags$mid0 | lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5, 1, 0))
-
-lags$w10 <- ifelse(is.na(lags$mid0) == T | is.na(lags$mid1) == T | is.na(lags$mid2) == T | is.na(lags$mid3) == T | is.na(lags$mid4) == T | is.na(lags$mid5) == T | is.na(lags$mid6) == T | is.na(lags$mid7) == T | is.na(lags$mid8) == T | is.na(lags$mid9) == T | is.na(lags$mid10) == T, 0, ifelse(lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5 | lags$year == lags$mid6 | lags$year == lags$mid7 | lags$year == lags$mid8 | lags$year == lags$mid9 | lags$year == lags$mid10, 1, 0))
-
-lags$w20 <- ifelse(is.na(lags$year) == T, 0, ifelse(lags$year == lags$mid1 | lags$year == lags$mid2 | lags$year == lags$mid3 | lags$year == lags$mid4 | lags$year == lags$mid5 | lags$year == lags$mid6 | lags$year == lags$mid7 | lags$year == lags$mid8 | lags$year == lags$mid9 | lags$year == lags$mid10 | lags$year == lags$mid11 | lags$year == lags$mid12 | lags$year == lags$mid13 | lags$year == lags$mid14 | lags$year == lags$mid15 | lags$year == lags$mid16 | lags$year == lags$mid17 | lags$year == lags$mid18 | lags$year == lags$mid19 | lags$year == lags$mid20, 1, 0))
-
-data$mid0 <- ifelse(is.na(data$ter) == T, 0, ifelse(data$ter == 1, data$cwkeynum, 0))
-data$mid1 <- ifelse(is.na(data$ter) == T, 0, ifelse(data$ter == 1, lag(data$cwkeynum, - 1), 0))
-data$mid2 <- ifelse(is.na(data$ter) == T, 0, ifelse(data$ter == 1, lag(data$cwkeynum, -2), 0))
-data$mid3 <- ifelse(data$ter == 1, lag(data$cwkeynum, -3), 0)
-data$mid4 <- ifelse(data$ter == 1, lag(data$cwkeynum, -4), 0)
-data$mid5 <- ifelse(data$ter == 1, lag(data$cwkeynum, -5), 0)
-
-data$window5 <- ifelse(data$mid0 > 0 | data$mid1 > 0 | data$mid2 > 0, 1, 0)
-
-# clean up
-drops <- c("mid0","mid1","mid2","mid3","mid4","mid5","mid6","mid7","mid8","mid9","mid10","mid11","mid12","mid13","mid14","mid15","mid16","mid17","mid18","mid19","mid20","V21","dyad")
-data <- data[,!(names(data) %in% drops)]
-rm(drops)
-
-# at some point I want to fill down MID info. Zoo or maybe google refine.
 
 ######### shrink back down to tc as unit of analysis #################
 
