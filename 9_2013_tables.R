@@ -1,0 +1,62 @@
+#9_2013 update
+data <- read.csv("9_2013.csv")
+
+library(Zelig)
+library(stargazer)
+
+data$caprat = (data$cap_1/data$cap_2)
+data$lead1 = ifelse(data$lead1 > 0, 1, 0)
+data$lead1[is.na(data$lead)] = 0
+data$lagtc1 = ifelse(data$lagtc1 > 0, 1, 0)
+data$lagtc1[is.na(data$lagtc1)] = 0
+
+#Table 1 w/ rivalry added
+m1 = glm(lead1 ~ agreement + contlose + conflict + rivals, data=data, family=binomial(logit))
+summary(m1)
+m2 = glm(lead1 ~ agreement + arbadj2 + conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(m2)
+m3 = glm(window5 ~ agreement + conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(m3)
+m4 = glm(window5 ~ agreement + arbadj2 + conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(m4)
+m5 = glm(window10 ~ agreement + conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(m5)
+m6 = glm(window10 ~ agreement + arbadj2 + conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(m6)
+m7 = glm(window20 ~ agreement + contlose + conflict + rivals, data=data, family=binomial(logit))
+summary(m7)
+m8 = glm(window20 ~ agreement + arbadj2 + contlose + conflict + rivals, data=data, family=binomial(logit))
+summary(m8)
+
+library(stargazer)
+mids <- c("MID within 1 Year","MID within 5 Years","MID within 10 Years","MID within 20 Years")
+cov <- c("Agreement","Adjudication/Arbitration","Conflict","Homeland","Capability Ratio","Rivalry")
+stargazer(m1,m2,m3,m4,m5,m6,m7,m8,title="Logit Models of the Effect of Legalized Territorial Transfers on Territorial MIDs",style="apsr",dep.var.labels=mids,covariate.labels=cov)
+
+i1 = glm(lead1 ~ agreement*conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(i1)
+i2 = glm(window5 ~ agreement*conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(i2)
+i3 = glm(window10 ~ agreement*conflict + contlose + caprat + rivals, data=data, family=binomial(logit))
+summary(i3)
+i4 = glm(window20 ~ agreement*conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(i4)
+i5 = glm(lagtc1 ~ agreement*conflict + contlose + rivals, data=data, family=binomial(logit))
+summary(i5)
+# i6 = glm(outstanding.claim5 ~ agreement*conflict + contlose + caprat + rivals, data=data, family=binomial(logit))
+# summary(i6)
+
+interactions <- c("Agreement","Conflict","Homeland","Capability Ratio","Rivalry","Agreement x Conflict")
+int.d <- c("MID within 1 Year","MID within 5 Years","MID within 10 Years","MID within 20 Years","Claim within 1 Year")
+stargazer(i1,i2,i3,i4,i5,title="Interactions of Conflict and Agreement",style="apsr",dep.var.labels=int.d,covariate.labels=interactions)
+
+k1 <- glm(lead1 ~ agreement*rivals + contlose, data=data, family=binomial(logit))
+summary(k1)
+k2 = glm(window5 ~ agreement*rivals + contlose, data=data, family=binomial(logit))
+summary(k2)
+k3 = glm(window10 ~ agreement*rivals + contlose, data=data, family=binomial(logit))
+summary(k3)
+k4 = glm(window20 ~ agreement*rivals + contlose, data=data, family=binomial(logit))
+summary(k4)
+k5 = glm(lagtc1 ~ agreement*conflict + contlose, data=data, family=binomial(logit))
+summary(k5)
