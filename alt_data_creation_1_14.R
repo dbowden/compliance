@@ -63,8 +63,34 @@ tc <- subset(tc, gainer > 1)
 tc <- subset(tc, loser > 1)
 
 #remove unneeded vars
+tc <- subset(tc, select = -c(V21,year.2))
+
+###Create rivalry variable
+
+#standardize rivalry years
+riv$beginr <- substr(riv$beginr, 1, 4)
+riv$endr <- substr(riv$endr, 1, 4)
+
+#make everything numeric
+riv$beginr <- as.numeric(riv$beginr)
+riv$endr <- as.numeric(riv$endr)
+
+#convert rivalry to dyad years and merge
+all.years <- ddply(riv, .(rivnumb), summarize, seq(beginr, endr))
+riv <- merge(riv,all.years,all=T)
+riv <- subset(riv, select = -c(beginr,endr))
+colnames(riv)[8] <- "year"
+tc$dyad <- ifelse(tc$gainer > tc$loser, paste(tc$loser,tc$gainer,sep=""), paste(tc$gainer,tc$loser,sep=""))
+riv$dyad <- ifelse(riv$rivala > riv$rivalb, paste(riv$rivalb,riv$rivala,sep=""), paste(riv$rivala,riv$rivalb,sep=""))
+riv <- subset(riv, select = -c(rivala,rivalb))
+tc <- merge(tc,riv,all.x=T,all.y=F)
+rm(riv)
 
 ###Clean up the MIDs data
+
+#first, get rid of dyads with no mids
+frame <- ddply(frame, .())
+
 frame[frame < -10] <- NA
 frame[,1:32][frame[,1:32] < 0] <- NA
 
@@ -74,8 +100,3 @@ frame$ter <- ifelse(frame$cwrevt11 == 1 | frame$cwrevt21 == 1 | frame$cwrevt21 =
 #standardize country codes and years for merging
 colnames(frame)[1] <- "loser"
 colnames(frame)[2] <- "gainer"
-
-
-#standardize rivalry years
-riv$beginr <- substr(riv$beginr, 1, 4)
-riv$endr <- substr(riv$endr, 1, 4)
