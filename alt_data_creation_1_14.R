@@ -1,8 +1,8 @@
 ###new approach that involves sql lookups instead of merging everything
 tc <- read.csv("http://dl.dropbox.com/u/4115584/tc2008.csv")
-frame <- read.csv("http://dl.dropboxusercontent.com/u/4115584/frame2.csv")
 courts <- read.delim("http://dl.dropbox.com/u/4115584/huthallee")
-riv <- read.csv("http://dl.dropboxusercontent.com/u/4115584/riv5.10all.csv")
+
+library(plyr)
 
 ###First clean up territorial change data and add courts variable
 #standardize NA codes
@@ -54,26 +54,24 @@ courts[3,5] <- 99
 courts[3,6] <- 98
 courts[29,5] <- 99
 courts[29,6] <- 98
-tc$arbadj2 <- ifelse((tc$year.2 %in% courts$year.2 | tc$year.2 %in% courts$year.1 | tc$year.2 %in% courts$year.0) & tc$gainer %in% courts$gainer & tc$loser %in% courts$loser, 1, 0)
-tc$arbadj0 <- ifelse(tc$year.2 %in% courts$year.2 & tc$gainer %in% courts$gainer & tc$loser %in% courts$loser, 1, 0)
+tc$arbadj2 <- ifelse((tc$year.2 %in% courts$year.2 | tc$year.2 %in% courts$year.1 | tc$year.2 %in% courts$year.0) & (tc$gainer %in% courts$gainer | tc$gainer %in% courts$loser) & (tc$loser %in% courts$loser | tc$loser %in% courts$gainer), 1, 0)
+tc$arbadj0 <- ifelse(tc$year.2 %in% courts$year.2 & (tc$gainer %in% courts$gainer | tc$gainer %in% courts$loser) & (tc$loser %in% courts$loser | tc$loser %in% courts$gainer), 1, 0)
 rm(courts)
 
 #drop non-states (this should be near the top, but I realized too late that I missed some non-state actors and don't want to adjust the hand coding)
 tc <- subset(tc, gainer > 1)
 tc <- subset(tc, loser > 1)
+#at this point there are 472 observations
 
 #remove unneeded vars
 tc <- subset(tc, select = -c(V21,year.2))
 
 ###Create rivalry variable
+riv <- read.csv("http://dl.dropboxusercontent.com/u/4115584/riv5.10all.csv")
 
 #standardize rivalry years
-riv$beginr <- substr(riv$beginr, 1, 4)
-riv$endr <- substr(riv$endr, 1, 4)
-
-#make everything numeric
-riv$beginr <- as.numeric(riv$beginr)
-riv$endr <- as.numeric(riv$endr)
+riv$beginr <- as.numeric(substr(riv$beginr, 1, 4))
+riv$endr <- as.numeric(substr(riv$endr, 1, 4))
 
 #convert rivalry to dyad years and merge
 all.years <- ddply(riv, .(rivnumb), summarize, seq(beginr, endr))
@@ -84,19 +82,42 @@ tc$dyad <- ifelse(tc$gainer > tc$loser, paste(tc$loser,tc$gainer,sep=""), paste(
 riv$dyad <- ifelse(riv$rivala > riv$rivalb, paste(riv$rivalb,riv$rivala,sep=""), paste(riv$rivala,riv$rivalb,sep=""))
 riv <- subset(riv, select = -c(rivala,rivalb))
 tc <- merge(tc,riv,all.x=T,all.y=F)
-rm(riv)
+rm(riv,all.years)
 
 ###Clean up the MIDs data
-
-#first, get rid of dyads with no mids
-frame <- ddply(frame, .())
+frame <- read.csv("http://dl.dropboxusercontent.com/u/4115584/frame1_14.csv")
 
 frame[frame < -10] <- NA
-frame[,1:32][frame[,1:32] < 0] <- NA
+frame[,c(1:24,27:28)][frame[,c(1:24,27:28)] < 0] <- NA
 
 #limit to territorial MIDs
 frame$ter <- ifelse(frame$cwrevt11 == 1 | frame$cwrevt21 == 1 | frame$cwrevt21 == 1 | frame$cwrevt22 == 1 | frame$cwrevt12 == 1, 1, 0)
 
 #standardize country codes and years for merging
-colnames(frame)[1] <- "loser"
-colnames(frame)[2] <- "gainer"
+frame$dyad <- ifelse(frame$ccode1 > frame$ccode2, paste(frame$ccode2,frame$ccode1,sep=""), paste(frame$ccode1,frame$ccode2,sep=""))
+data <- merge(tc, frame, all=T)
+rm(frame,tc)
+
+#make indicator for MID initiator/side A
+data$loser.init <- ifelse(data$loser==data$ccode1, 1, 0)
+data <- subset(data, select=-c(ccode1,ccode2))
+
+### Merge in Claims Data
+
+#clean data
+icow <- read.csv("http://dl.dropboxusercontent.com/u/4115584/ICOWprov10.csv")
+icow <- subset(icow, select = -version)
+icow$endclaim[icow$endclaim == -9] <- 201312
+icow[icow == -9] <- NA
+icow$begclaim <- as.numeric(substr(icow$begclaim, 1, 4))
+icow$endclaim <- as.numeric(substr(icow$endclaim, 1, 4))
+
+#convert to yearly observations and merge
+all.years <- ddply(icow, .(claimdy), summarize, seq(begclaim, endclaim))
+icow <- merge(icow,all.years,all=T)
+colnames(icow)[24] <- "year"
+icow$dyad <- ifelse(icow$chal > icow$tgt, paste(icow$tgt,icow$chal,sep=""), paste(icow$chal,icow$tgt,sep=""))
+data <- merge(data,icow,by=c("dyad","year"),all=T)
+rm(icow,all.years)
+
+### Make 1, 5, 10 and 20 year windows for MIDs
