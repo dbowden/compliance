@@ -88,14 +88,14 @@ rm(riv,all.years)
 frame <- read.csv("http://dl.dropboxusercontent.com/u/4115584/frame1_14.csv")
 
 frame[frame < -10] <- NA
-frame[,c(1:24,27:28)][frame[,c(1:24,27:28)] < 0] <- NA
+frame[,1:30][frame[,1:30] < 0] <- NA
 
 #limit to territorial MIDs
 frame$ter <- ifelse(frame$cwrevt11 == 1 | frame$cwrevt21 == 1 | frame$cwrevt21 == 1 | frame$cwrevt22 == 1 | frame$cwrevt12 == 1, 1, 0)
 
 #standardize country codes and years for merging
 frame$dyad <- ifelse(frame$ccode1 > frame$ccode2, paste(frame$ccode2,frame$ccode1,sep=""), paste(frame$ccode1,frame$ccode2,sep=""))
-data <- merge(tc, frame, all=T)
+data <- merge(tc, frame,all=T)
 rm(frame,tc)
 
 #make indicator for MID initiator/side A
@@ -111,13 +111,110 @@ icow$endclaim[icow$endclaim == -9] <- 201312
 icow[icow == -9] <- NA
 icow$begclaim <- as.numeric(substr(icow$begclaim, 1, 4))
 icow$endclaim <- as.numeric(substr(icow$endclaim, 1, 4))
-
-#convert to yearly observations and merge
-all.years <- ddply(icow, .(claimdy), summarize, seq(begclaim, endclaim))
-icow <- merge(icow,all.years,all=T)
-colnames(icow)[24] <- "year"
 icow$dyad <- ifelse(icow$chal > icow$tgt, paste(icow$tgt,icow$chal,sep=""), paste(icow$chal,icow$tgt,sep=""))
-data <- merge(data,icow,by=c("dyad","year"),all=T)
-rm(icow,all.years)
+
+#convert to dyad years
+all.years <- ddply(icow, .(claimdy), summarize, seq(begclaim, endclaim))
+colnames(all.years)[2] <- "year"
+icow <- merge(icow,all.years,all=T)
+rm(all.years)
+
+#remove multiple claims per dyad year. we're not using any claim attributes, so we'll just keep the first one listed.
+dupes <- subset(icow,select=c(dyad,year))
+dupes$dupes <- duplicated(dupes)
+icow$dupes <- dupes$dupes
+rm(dupes)
+icow <- subset(icow,dupes==FALSE)
+icow <- subset(icow,select=-c(dupes,dyadnum))
+
+#merge
+data <- merge(data,icow,by=c("dyad","year"),all.x=T,all.y=F)
+rm(icow)
 
 ### Make 1, 5, 10 and 20 year windows for MIDs
+
+#my approach is to reverse lag the mid number
+
+#I'm running into memory problems, so I'll trim the dataset down a bit temporarily
+write.csv(data,"1_14.csv") #we'll merge this back in later
+data <- subset(data, select=c(dyad,year,cwkeynum,claimdy))
+
+#can't find a good way to do reverse lags in panel data in R, so we'll export to Stata for this step
+write.csv(data,"pre_stata_slim.csv")
+#see stata do file for commands
+#import back from stata
+data <- read.csv("post_stata_slim.csv")
+
+#calculate indicators for windows
+data$window5 <- ifelse(data$mid1 > 0 | data$mid2 > 0 | data$mid3 > 0 | data$mid4 > 0 | data$mid5 > 0, 1, 0)
+data$window5[is.na(data$window5)] <- 0
+
+data$window10 <- ifelse(data$mid1 > 0 | data$mid2 > 0 | data$mid3 > 0 | data$mid4 > 0 | data$mid5 > 0 | data$mid6 > 0 | data$mid7 > 0 | data$mid8 > 0 | data$mid9 > 0 | data$mid10 > 0, 1, 0)
+data$window10[is.na(data$window10)] <- 0
+
+data$window20 <- ifelse(data$mid1 > 0 | data$mid2 > 0 | data$mid3 > 0 | data$mid4 > 0 | data$mid5 > 0 | data$mid6 > 0 | data$mid7 > 0 | data$mid8 > 0 | data$mid9 > 0 | data$mid10 > 0 | data$mid11 > 0 | data$mid12 > 0 | data$mid13 > 0 | data$mid14 > 0 | data$mid15 > 0 | data$mid16 > 0 | data$mid18 > 0 | data$mid19 > 0 | data$mid20 > 0, 1, 0)
+data$window20[is.na(data$window20)] <- 0
+
+data$outstanding.claim.5 <- ifelse(data$claim1 > 0 | data$claim2 > 0 | data$claim3 > 0 | data$claim4 > 0 | data$claim5 > 0, 1, 0)
+data$outstanding.claim.5[is.na(data$outstanding.claim.5)] <- 0
+
+data$outstanding.claim.10 <- ifelse(data$claim1 > 0 | data$claim2 > 0 | data$claim3 > 0 | data$claim4 > 0 | data$claim5 > 0 | data$claim6 > 0 | data$claim7 > 0 | data$claim8 > 0 | data$claim9 > 0 | data$claim10 > 0, 1, 0)
+data$outstanding.claim.10[is.na(data$outstanding.claim.10)] <- 0
+
+data$outstanding.claim.20 <- ifelse(data$claim1 > 0 | data$claim2 > 0 | data$claim3 > 0 | data$claim4 > 0 | data$claim5 > 0 | data$claim6 > 0 | data$claim7 > 0 | data$claim8 > 0 | data$claim9 > 0 | data$claim10 > 0 | data$claim11 > 0 | data$claim12 > 0 | data$claim13 > 0 | data$claim14 > 0 | data$claim15 > 0 | data$claim16 > 0 | data$claim18 > 0 | data$claim19 > 0 | data$claim20 > 0, 1, 0)
+data$outstanding.claim.20[is.na(data$outstanding.claim.20)] <- 0
+
+#get rid of lags, just keep indicators
+data <- subset(data, select=c(year,dyad,cwkeynum,claimdy,mid1,window5,window10,window20,claim1,outstanding.claim.5,outstanding.claim.10,outstanding.claim.20))
+
+#merge back together with the rest of the data
+x <- read.csv("1_14.csv")
+data <- merge(data,x,all=T)
+rm(x)
+
+#and finally, cut it back down to the territorial change as the unit of analysis
+data <- subset(data, !is.na(data$version))
+
+#create a few more variables
+data$caprat = (data$cap_1/data$cap_2)
+data$mid1 = ifelse(data$mid1 > 0, 1, 0)
+data$mid1[is.na(data$mid1)] = 0
+data$claim1 = ifelse(data$claim1 > 0, 1, 0)
+data$claim1[is.na(data$claim1)] = 0
+data$rivals <- ifelse(data$rivtyp2=="RIVALRY", 1, 0)
+data$rivals[is.na(data$rivals)] <- 0
+data$joint.dem <- ifelse(data$polity21 >= 6 & data$polity22 >= 6, 1, 0)
+#data$contiguous <- ifelse(data$contig==1 | (data$contlose==0 & data$colcont==1), 1, 0)
+
+#I want to get the beginning date of claims to control for pre-existing ones
+icow <- read.csv("http://dl.dropboxusercontent.com/u/4115584/ICOWprov10.csv")
+icow <- subset(icow, select=c(claimdy,begclaim))
+icow$begclaim <- as.numeric(substr(icow$begclaim,1,4))
+data <- merge(data,icow,by="claimdy",all.x=T,all.y=F)
+rm(icow)
+data$begclaim.x <- ifelse(is.na(data$begclaim.x)==T, data$begclaim.y, data$begclaim.x)
+data <- subset(data, select=-begclaim.y)
+colnames(data)[77] <- "begclaim"
+data$existing.claim <- ifelse(data$year > data$begclaim, 1, 0)
+data$existing.claim[is.na(data$existing.claim)] <- 0
+
+#create a separate dv for new claims
+data$new.claim.1 <- ifelse(data$claim1==1& data$begclaim>=data$year, 1, 0)
+data$new.claim.1[is.na(data$new.claim.1)] <- 0
+data$new.claim.5 <- ifelse(data$outstanding.claim.5==1 & data$begclaim>=data$year,1,0)
+data$new.claim.5[is.na(data$new.claim.5)] <- 0
+data$new.claim.10 <- ifelse(data$outstanding.claim.10==1 & data$begclaim>=data$year,1,0)
+data$new.claim.10[is.na(data$new.claim.10)] <- 0
+data$new.claim.20 <- ifelse(data$outstanding.claim.20==1 & data$begclaim>=data$year,1,0)
+data$new.claim.20[is.na(data$new.claim.20)] <- 0
+
+#and let's see if we can fill in some missing values on the contiguity variable
+contig <- read.csv("http://dl.dropboxusercontent.com/u/4115584/contdir.csv")
+contig2 <- ifelse(data$dyad %in% contig$dyad, contig$conttype, NA)
+data$contig2 <- contig2
+data$cont <- ifelse(is.na(data$contig)==T, data$contig2, data$contig)
+rm(contig,contig2)
+data <- subset(data,select=-c(contig,contig2,X,X.2))
+
+#and write the data
+write.csv(data,"tc_1_14.csv")
