@@ -217,8 +217,8 @@ icow <- subset(icow,dupes==FALSE)
 icow <- subset(icow,select=-c(dupes,dyadnum))
 
 #merge
-data <- merge(data,icow,by=c("dyad","year"),all.x=T,all.y=F)
-rm(icow)
+data <- merge(frame,icow,by=c("dyad","year"),all.x=T,all.y=F)
+rm(icow,frame)
 
 ### Make 1, 5, 10 and 20 year windows for MIDs
 
