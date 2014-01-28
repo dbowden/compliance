@@ -1,6 +1,8 @@
 #### Analysis for Brazil paper
+#updated 9.15.13
 
-data <- read.csv("compliance.csv")
+#data <- read.csv("compliance.csv")
+data <- read.csv("9_2013.csv")
 
 library(Zelig)
 library(stargazer)
@@ -105,7 +107,7 @@ stargazer(j1,j2,j3,j4,j5,j6,j7,j8,j9,j10,title="Pre-WWII",style="apsr")
 
 #### Claims
 
-m9 = zelig(lagtc1 ~ agreement + conflict + contlose + caprat, data=data, model="relogit")
+m9 = zelig(lagtc1 ~ agreement + conflict + contlose + caprat + polity21, data=data, model="relogit")
 summary(m9)
 m10 = zelig(lagtc1 ~ agreement + arbadj2 + conflict + contlose + caprat, data=data, model="relogit")
 summary(m10)
