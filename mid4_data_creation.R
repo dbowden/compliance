@@ -81,8 +81,28 @@ colnames(riv)[8] <- "year"
 tc$dyad <- ifelse(tc$gainer > tc$loser, paste(tc$loser,tc$gainer,sep=""), paste(tc$gainer,tc$loser,sep=""))
 riv$dyad <- ifelse(riv$rivala > riv$rivalb, paste(riv$rivalb,riv$rivala,sep=""), paste(riv$rivala,riv$rivalb,sep=""))
 riv <- subset(riv, select = -c(rivala,rivalb))
-tc <- merge(tc,riv,all.x=T,all.y=F)
+tc <- merge(tc,riv,all.x=T,all.y=F,sort=F)
 rm(riv,all.years)
+
+#extend thru 2006 w/ peace scale data
+ps <- read.csv("http://dl.dropboxusercontent.com/u/4115584/psv2rivalry.csv")
+colnames(ps) <- c("dyad","riv1","riv2","beg","end","scale")
+ps[1:3,1] <- 241
+ps[4:6,1] <- 293
+ps$beg <- as.numeric(substr(ps$beg,1,4))
+ps$end <- as.numeric(substr(ps$end,1,4))
+ps <- subset(ps,scale==1)
+ps$id <- paste(ps$dyad,ps$beg,sep="")
+all.years <- ddply(ps, .(id), summarize, seq(beg,end,1))
+ps <- merge(ps,all.years,all=T)
+colnames(ps)[8] <- "year"
+ps <- subset(ps, select=c(dyad,year,scale))
+tc <- merge(tc,ps,all.x=T,all.y=F,sort=F)
+rm(ps,all.years)
+
+#create rivalry var
+tc$rivals <- ifelse(tc$rivtyp2=="RIVALRY" | tc$scale==1, 1, 0)
+tc$rivals[is.na(tc$rivals)] <- 0
 
 ### Add a contiguity measure
 contig <- read.csv("http://dl.dropboxusercontent.com/u/4115584/contdir.csv")
@@ -93,23 +113,40 @@ all.years <- ddply(contig, .(dyad, begin), summarize, seq(begin, end))
 colnames(all.years)[3] <- "year"
 contig <- merge(all.years,contig,all=T)
 contig <- subset(contig,select=c(dyad,year,conttype))
-tc <- merge(tc,contig,all.x=T,all.y=F)
+tc <- merge(tc,contig,all.x=T,all.y=F,sort=F)
 rm(all.years,contig)
 #A few cases are duplicated due to contigutiy changing as a result of the transfer. I'll use the resulting contiguity.
-tc[236,30] <- 2
+tc <- tc[with(tc, order(number)),]
+tc[235,30] <- 2
 tc[238,30] <- 2
 tc[435,30] <- 1
-tc <- tc[-c(237,239,436),]
+tc <- tc[-c(236,239,436),]
+#assume missing values are zero
+tc$conttype[is.na(tc$conttype)] <- 0
 
-#capabilities
+### Capabilities
 cinc <- read.csv("http://correlatesofwar.org/COW2%20Data/Capabilities/NMC_v4_0.csv")
 cinc <- subset(cinc,select=c(ccode,year,cinc))
 colnames(cinc)[1] <- "gainer"
 tc <- merge(tc,cinc,by=c("gainer","year"), all.x=T,all.y=F)
-colnames(tc)[31] <- "cap1"
+colnames(tc)[33] <- "cap1"
 colnames(cinc)[1] <- "loser"
 tc <- merge(tc,cinc,by=c("loser","year"), all.x=T,all.y=F)
+colnames(tc)[34] <- "cap2"
 rm(cinc)
+tc$caprat <- (tc$cap1/tc$cap2)
+
+### Polity IV
+polity <- read.csv("http://dl.dropboxusercontent.com/u/4115584/polityiv.csv")
+polity <- subset(polity, select=c(ccode,year,polity2))
+colnames(polity)[1] <- "gainer"
+tc <- merge(tc,polity,by=c("gainer","year"),all.x=T,all.y=F)
+colnames(tc)[36] <- "polity1"
+colnames(polity)[1] <- "loser"
+#note this means "polity2" is the losing side's polity score
+tc <- merge(tc,polity,by=c("loser","year"),all.x=T,all.y=F)
+rm(polity)
+tc$joint.dem <- ifelse(tc$polity1 >= 6 & tc$polity2 >= 6, 1, 0)
 
 ### Merge everything into country year frame with MID 4.0
 
@@ -153,9 +190,6 @@ rm(tc)
 #merge mids into frame
 frame <- merge(frame,mids,all.x=T,all.y=F)
 rm(mids)
-
-#Polity IV
-
 
 ### Merge in Claims Data
 
