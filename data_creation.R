@@ -73,9 +73,9 @@ rm(courts,trncint)
 tc$arbadj2[is.na(tc$arbadj2)] <- 0
 
 #code more recent cases
-tc[367,24] <- 1
-tc[368,24] <- 1
-tc[370,24] <- 1
+tc[367,24] <- 1 #471 from 475 in 2008
+tc[368,24] <- 1 #471 from 475 in 2003
+tc[370,24] <- 1 #475 from 471 in 2003
 
 #merge tc into frame
 data <- merge(tc, frame, all=T)
